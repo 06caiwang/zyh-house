@@ -1,0 +1,40 @@
+package com.zyh.adminapi.house.vo;
+
+import com.zyh.adminapi.house.dto.DeviceDTO;
+import com.zyh.adminapi.house.dto.TagDTO;
+
+import java.util.List;
+
+/**
+ * @author zhangyuheng
+ */
+public class HouseDetailVO {
+    private Long houseId;
+    private Long userId;
+    private String nickName;
+    private String avatar;
+    private String title;
+    private String rentType;
+    private Integer floor;
+    private Integer allFloor;
+    private String houseType;
+    private String rooms;
+    private String position;
+    private Double area;
+    private Double price;
+    private String intro;
+    private List<DeviceDTO> devices;
+    private List<TagDTO> tags;
+    private String headImage;
+    private List<String> images;
+    private Long cityId;
+    private String cityName;
+    private Long regionId;
+    private String regionName;
+    private String communityName;
+    private String detailAddress;
+    private Double longitude;
+    private Double latitude;
+    private String status;
+    private String rentTimeCode;
+}
