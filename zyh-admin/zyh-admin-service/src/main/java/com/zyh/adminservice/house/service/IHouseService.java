@@ -1,6 +1,7 @@
 package com.zyh.adminservice.house.service;
 
 import com.zyh.adminservice.house.domain.dto.HouseAddOrEditReqDTO;
+import com.zyh.adminservice.house.domain.dto.HouseDTO;
 
 /**
  * @author zhangyuheng
@@ -20,4 +21,12 @@ public interface IHouseService {
      * @param houseId
      */
     void cacheHouse(Long houseId);
+
+    /**
+     * 查询房源详情（带缓存）
+     *
+     * @param houseId
+     * @return
+     */
+    HouseDTO detail(Long houseId);
 }
