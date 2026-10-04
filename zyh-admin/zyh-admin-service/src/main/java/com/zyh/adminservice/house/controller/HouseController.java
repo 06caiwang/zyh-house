@@ -1,11 +1,13 @@
 package com.zyh.adminservice.house.controller;
 
+import com.zyh.adminapi.house.domain.dto.SearchHouseListReqDTO;
 import com.zyh.adminapi.house.domain.vo.HouseDetailVO;
 import com.zyh.adminapi.house.feign.HouseFeignClient;
 import com.zyh.adminservice.house.domain.dto.*;
 import com.zyh.adminservice.house.domain.vo.HouseVO;
 import com.zyh.adminservice.house.service.IHouseService;
 import com.zyh.commoncore.domain.dto.BasePageDTO;
+import com.zyh.commoncore.utils.BeanCopyUtil;
 import com.zyh.commondomain.domain.R;
 import com.zyh.commondomain.domain.vo.BasePageVO;
 import jakarta.annotation.Resource;
@@ -75,5 +77,15 @@ public class HouseController implements HouseFeignClient {
     public R<Void> refreshHouseIds() {
         houseService.refreshHouseIds();
         return R.ok();
+    }
+
+    @Override
+    public R<BasePageVO<HouseDetailVO>> searchList(@Validated @RequestBody SearchHouseListReqDTO searchHouseListReqDTO) {
+        BasePageVO<HouseDetailVO> result = new BasePageVO<>();
+        BasePageDTO<HouseDTO> searchDTO =  houseService.searchList(searchHouseListReqDTO);
+        result.setTotals(searchDTO.getTotals());
+        result.setTotalPages(searchDTO.getTotalPages());
+        result.setList(BeanCopyUtil.copyListProperties(searchDTO.getList(), HouseDetailVO::new));
+        return R.ok(result);
     }
 }

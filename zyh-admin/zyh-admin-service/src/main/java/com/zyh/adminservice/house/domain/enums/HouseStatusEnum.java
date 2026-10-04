@@ -1,4 +1,4 @@
-package com.zyh.adminservice.house.domain;
+package com.zyh.adminservice.house.domain.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

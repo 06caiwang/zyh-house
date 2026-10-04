@@ -3,13 +3,17 @@ package com.zyh.adminservice.house.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.zyh.adminapi.config.domain.dto.DictionaryDataDTO;
 import com.zyh.adminapi.house.domain.dto.DeviceDTO;
+import com.zyh.adminapi.house.domain.dto.SearchHouseListReqDTO;
 import com.zyh.adminapi.house.domain.dto.TagDTO;
 import com.zyh.adminservice.config.service.ISysDictionaryService;
-import com.zyh.adminservice.house.domain.HouseStatusEnum;
+import com.zyh.adminservice.house.domain.enums.HouseStatusEnum;
 import com.zyh.adminservice.house.domain.dto.*;
 import com.zyh.adminservice.house.domain.entity.*;
 import com.zyh.adminservice.house.mapper.*;
 import com.zyh.adminservice.house.service.IHouseService;
+import com.zyh.adminservice.house.service.filter.IHouseFilter;
+import com.zyh.adminservice.house.service.strategy.ISortStrategy;
+import com.zyh.adminservice.house.service.strategy.SortStrategyFactory;
 import com.zyh.adminservice.mapper.domain.entity.SysRegion;
 import com.zyh.adminservice.mapper.mapper.RegionMapper;
 import com.zyh.adminservice.user.domain.entity.AppUser;
@@ -30,10 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -75,6 +76,9 @@ public class HouseServiceImpl implements IHouseService {
 
     @Resource(name = "sysDictionaryServiceImpl")
     private ISysDictionaryService sysDictionaryService;
+
+    @Autowired
+    private final Map<String, IHouseFilter> houseFilterMap = new HashMap<>();
 
     @Override
     public Long addOrEdit(HouseAddOrEditReqDTO houseAddOrEditReqDTO) {
@@ -334,6 +338,102 @@ public class HouseServiceImpl implements IHouseService {
                 cacheHouse(cityHouse.getHouseId());
             }
         }
+    }
+
+    @Override
+    public BasePageDTO<HouseDTO> searchList(SearchHouseListReqDTO searchHouseListReqDTO) {
+        // 获取城市下全量的房源信息列表
+        List<HouseDTO> houseDTOList = getCacheHouseListByCity(searchHouseListReqDTO.getCityId());
+
+        // 筛选、排序、分页
+        return filterHouse(houseDTOList, searchHouseListReqDTO);
+    }
+
+    private BasePageDTO<HouseDTO> filterHouse(List<HouseDTO> houseDTOList, SearchHouseListReqDTO searchHouseListReqDTO) {
+        // 筛选（多策略，全策略都要过一遍）
+        List<HouseDTO> validHouseDTOList = houseFilter(houseDTOList, searchHouseListReqDTO);
+
+        // 排序（多策略，只需要指定一个策略执行即可）
+        validHouseDTOList = houseSorting(validHouseDTOList, searchHouseListReqDTO);
+
+        // 分页
+        return housePage(validHouseDTOList, searchHouseListReqDTO);
+    }
+
+    private BasePageDTO<HouseDTO> housePage(List<HouseDTO> houseDTOList,
+                                            SearchHouseListReqDTO reqDTO) {
+
+        List<HouseDTO> pagedHouseDTOList = houseDTOList.stream()
+                .skip(reqDTO.getOffset())
+                .limit(reqDTO.getPageSize())
+                .collect(Collectors.toList());
+        BasePageDTO<HouseDTO> result = new BasePageDTO<>();
+        result.setTotals(houseDTOList.size());
+        result.setTotalPages(
+                BasePageDTO.calculateTotalPages(houseDTOList.size(), reqDTO.getPageSize()));
+        result.setList(pagedHouseDTOList);
+        return result;
+
+    }
+
+    private List<HouseDTO> houseSorting(List<HouseDTO> houseDTOList, SearchHouseListReqDTO searchHouseListReqDTO) {
+        // 多策略，只需要指定一个策略执行即可
+        // 工厂模式：工厂根据指定要求给我生产出一个策略即可
+        ISortStrategy sortStrategy = SortStrategyFactory.getSortStrategy(searchHouseListReqDTO.getSort());
+        return sortStrategy.sort(houseDTOList, searchHouseListReqDTO);
+    }
+
+    private List<HouseDTO> houseFilter(List<HouseDTO> houseDTOList, SearchHouseListReqDTO searchHouseListReqDTO) {
+        return houseDTOList.stream()
+                .filter(houseDTO -> houseFilterMap.values().stream() // 让 houseDTO 走一遍全部的筛选策略
+                        .allMatch(houseFilter -> {
+                            try {
+                                return houseFilter.filter(houseDTO, searchHouseListReqDTO);
+                            } catch (Exception e) {
+                                log.error("过滤房源发生异常，houseDTO:{}, filter:{}",
+                                        JsonUtil.obj2String(houseDTO),
+                                        houseFilter.getClass().getName(), e);
+                                return false;
+                            }
+                        })
+                ).collect(Collectors.toList());
+    }
+
+
+    private List<HouseDTO> getCacheHouseListByCity(Long cityId) {
+        if (null == cityId) {
+            return Arrays.asList();
+        }
+
+        List<HouseDTO> resultList = new ArrayList<>();
+
+        // 从缓存中获取城市下的房源id列表（Redis）
+        List<Long> houseIds = getCacheCityHouses(cityId);
+
+        // 获取房源详细信息列表
+        Set<Long> houseIdSet = new HashSet<>(houseIds);
+        for (Long houseId : houseIdSet) {
+            HouseDTO houseDTO = detail(houseId);
+            if (null != houseDTO) {
+                resultList.add(houseDTO);
+            }
+        }
+        
+        return resultList;
+    }
+
+    private List<Long> getCacheCityHouses(Long cityId) {
+        if (null == cityId) {
+            return Arrays.asList();
+        }
+
+        List<Long> houseIds = new ArrayList<>();
+        try {
+            houseIds = redisService.getCacheList(CITY_HOUSE_PREFIX + cityId, Long.class);
+        } catch (Exception e) {
+            log.error("从缓存中获取城市下的房源列表异常，key:{}",CITY_HOUSE_PREFIX + cityId, e);
+        }
+        return houseIds;
     }
 
     /**

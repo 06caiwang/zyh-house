@@ -1,5 +1,6 @@
 package com.zyh.adminservice.house.service;
 
+import com.zyh.adminapi.house.domain.dto.SearchHouseListReqDTO;
 import com.zyh.adminservice.house.domain.dto.*;
 import com.zyh.commoncore.domain.dto.BasePageDTO;
 
@@ -49,4 +50,12 @@ public interface IHouseService {
      * 脚本：刷新全量缓存
      */
     void refreshHouseIds();
+
+    /**
+     * 查询房源列表，支持筛选、排序、翻页
+     *
+     * @param searchHouseListReqDTO
+     * @return
+     */
+    BasePageDTO<HouseDTO> searchList(SearchHouseListReqDTO searchHouseListReqDTO);
 }

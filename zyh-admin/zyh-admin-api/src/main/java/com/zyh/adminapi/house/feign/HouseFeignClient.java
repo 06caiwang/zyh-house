@@ -21,4 +21,10 @@ public interface HouseFeignClient {
      */
     @GetMapping("/detail")
     R<HouseDetailVO> detail(@RequestParam Long houseId);
+
+    /**
+     * 查询房源列表，支持筛选、排序、翻页
+     */
+    @PostMapping("/list/search")
+    R<BasePageVO<HouseDetailVO>> searchList(@Validated @RequestBody SearchHouseListReqDTO searchHouseListReqDTO);
 }

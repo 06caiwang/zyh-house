@@ -1,8 +1,10 @@
 package com.zyh.adminapi.house.domain.dto;
 
+import com.zyh.commondomain.domain.dto.BasePageReqDTO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.List;
 
@@ -10,7 +12,8 @@ import java.util.List;
  * @author zhangyuheng
  */
 @Data
-public class SearchHouseListReqDTO {
+@EqualsAndHashCode(callSuper = true)
+public class SearchHouseListReqDTO extends BasePageReqDTO {
     /**
      * 城市id
      */
