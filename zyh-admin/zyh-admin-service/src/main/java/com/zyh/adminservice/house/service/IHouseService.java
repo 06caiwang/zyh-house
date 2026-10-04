@@ -1,9 +1,6 @@
 package com.zyh.adminservice.house.service;
 
-import com.zyh.adminservice.house.domain.dto.HouseAddOrEditReqDTO;
-import com.zyh.adminservice.house.domain.dto.HouseDTO;
-import com.zyh.adminservice.house.domain.dto.HouseDescDTO;
-import com.zyh.adminservice.house.domain.dto.HouseListReqDTO;
+import com.zyh.adminservice.house.domain.dto.*;
 import com.zyh.commoncore.domain.dto.BasePageDTO;
 
 /**
@@ -40,4 +37,11 @@ public interface IHouseService {
      * @return
      */
     BasePageDTO<HouseDescDTO> list(HouseListReqDTO houseListReqDTO);
+
+    /**
+     * 修改房源状态
+     *
+     * @param houseStatusEditReqDTO
+     */
+    void editStatus(HouseStatusEditReqDTO houseStatusEditReqDTO);
 }

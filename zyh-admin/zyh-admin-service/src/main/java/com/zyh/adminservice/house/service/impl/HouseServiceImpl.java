@@ -6,10 +6,7 @@ import com.zyh.adminapi.house.domain.dto.DeviceDTO;
 import com.zyh.adminapi.house.domain.dto.TagDTO;
 import com.zyh.adminservice.config.service.ISysDictionaryService;
 import com.zyh.adminservice.house.domain.HouseStatusEnum;
-import com.zyh.adminservice.house.domain.dto.HouseAddOrEditReqDTO;
-import com.zyh.adminservice.house.domain.dto.HouseDTO;
-import com.zyh.adminservice.house.domain.dto.HouseDescDTO;
-import com.zyh.adminservice.house.domain.dto.HouseListReqDTO;
+import com.zyh.adminservice.house.domain.dto.*;
 import com.zyh.adminservice.house.domain.entity.*;
 import com.zyh.adminservice.house.mapper.*;
 import com.zyh.adminservice.house.service.IHouseService;
@@ -20,6 +17,7 @@ import com.zyh.adminservice.user.mapper.AppUserMapper;
 import com.zyh.commoncore.domain.dto.BasePageDTO;
 import com.zyh.commoncore.utils.BeanCopyUtil;
 import com.zyh.commoncore.utils.JsonUtil;
+import com.zyh.commoncore.utils.TimestampUtil;
 import com.zyh.commondomain.domain.ResultCode;
 import com.zyh.commondomain.exception.ServiceException;
 import com.zyh.commonredis.service.RedisService;
@@ -258,6 +256,53 @@ public class HouseServiceImpl implements IHouseService {
         }
         result.setList(houses);
         return result;
+    }
+
+    @Override
+    public void editStatus(HouseStatusEditReqDTO houseStatusEditReqDTO) {
+        // 校验房源是否存在
+        House house = houseMapper.selectById(houseStatusEditReqDTO.getHouseId());
+        if (null == house) {
+            throw new ServiceException("房源不存在，无法修改状态！");
+        }
+
+        // 校验状态，必须有状态（创建房源时，默认状态是上架）
+        HouseStatus houseStatus = houseStatusMapper.selectOne(
+                new LambdaQueryWrapper<HouseStatus>().eq(HouseStatus::getHouseId, house.getId()));
+        if (null == houseStatus || StringUtils.isEmpty(houseStatus.getStatus())) {
+            throw new ServiceException("房源状态不存在，无法修改状态！");
+        }
+
+        // 校验状态传参（status是枚举）
+        HouseStatusEnum statusEnum = HouseStatusEnum.getByName(houseStatusEditReqDTO.getStatus());
+        if (null == statusEnum) {
+            throw new ServiceException("要修改的房源状态有误，无法修改状态！");
+        }
+
+        // 更新数据库(house_status)
+        houseStatus.setStatus(houseStatusEditReqDTO.getStatus());
+        if (HouseStatusEnum.RENTING.name()
+                .equalsIgnoreCase(houseStatusEditReqDTO.getStatus())) {
+
+            // 校验是否传了出租时长码
+            if(StringUtils.isEmpty(houseStatusEditReqDTO.getRentTimeCode())) {
+                throw new ServiceException("出租时长不能为空，无法修改状态！");
+            }
+
+            houseStatus.setRentTimeCode(houseStatusEditReqDTO.getRentTimeCode());
+            houseStatus.setRentStartTime(TimestampUtil.getCurrentMillis());
+            switch (houseStatusEditReqDTO.getRentTimeCode()) {
+                case "one_year" -> houseStatus.setRentEndTime(TimestampUtil.getYearLaterMillis(1L));
+                case "half_year" -> houseStatus.setRentEndTime(TimestampUtil.getMonthsLaterMillis(6L));
+                case "thirty_seconds" -> houseStatus.setRentEndTime(TimestampUtil.getSecondsLaterMillis(30L));
+                default -> throw new ServiceException("出租时长错误，无法修改状态！");
+            }
+        }
+
+        houseStatusMapper.updateById(houseStatus);
+
+        // 更新缓存
+        cacheHouse(house.getId());
     }
 
     /**

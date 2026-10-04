@@ -2,11 +2,8 @@ package com.zyh.adminservice.house.controller;
 
 import com.zyh.adminapi.house.domain.vo.HouseDetailVO;
 import com.zyh.adminapi.house.feign.HouseFeignClient;
+import com.zyh.adminservice.house.domain.dto.*;
 import com.zyh.adminservice.house.domain.vo.HouseVO;
-import com.zyh.adminservice.house.domain.dto.HouseAddOrEditReqDTO;
-import com.zyh.adminservice.house.domain.dto.HouseDTO;
-import com.zyh.adminservice.house.domain.dto.HouseDescDTO;
-import com.zyh.adminservice.house.domain.dto.HouseListReqDTO;
 import com.zyh.adminservice.house.service.IHouseService;
 import com.zyh.commoncore.domain.dto.BasePageDTO;
 import com.zyh.commondomain.domain.R;
@@ -60,5 +57,14 @@ public class HouseController implements HouseFeignClient {
         BasePageVO<HouseVO> result = new BasePageVO<>();
         BeanUtils.copyProperties(houseDescList, result);
         return R.ok(result);
+    }
+
+    /**
+     * 更新房源状态
+     */
+    @PostMapping("/status/edit")
+    public R<?> editStatus(@Validated @RequestBody HouseStatusEditReqDTO houseStatusEditReqDTO) {
+        houseService.editStatus(houseStatusEditReqDTO);
+        return R.ok();
     }
 }
