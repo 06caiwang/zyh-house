@@ -1,7 +1,7 @@
-package com.zyh.adminapi.house.vo;
+package com.zyh.adminapi.house.domain.vo;
 
-import com.zyh.adminapi.house.dto.DeviceDTO;
-import com.zyh.adminapi.house.dto.TagDTO;
+import com.zyh.adminapi.house.domain.dto.DeviceDTO;
+import com.zyh.adminapi.house.domain.dto.TagDTO;
 
 import java.util.List;
 

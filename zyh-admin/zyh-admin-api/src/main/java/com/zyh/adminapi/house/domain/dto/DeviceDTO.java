@@ -1,4 +1,4 @@
-package com.zyh.adminapi.house.dto;
+package com.zyh.adminapi.house.domain.dto;
 
 import lombok.Data;
 

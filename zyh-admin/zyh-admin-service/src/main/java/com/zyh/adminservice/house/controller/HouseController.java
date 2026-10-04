@@ -1,15 +1,21 @@
 package com.zyh.adminservice.house.controller;
 
+import com.zyh.adminapi.house.domain.vo.HouseDetailVO;
+import com.zyh.adminapi.house.feign.HouseFeignClient;
+import com.zyh.adminservice.house.domain.vo.HouseVO;
 import com.zyh.adminservice.house.domain.dto.HouseAddOrEditReqDTO;
+import com.zyh.adminservice.house.domain.dto.HouseDTO;
+import com.zyh.adminservice.house.domain.dto.HouseDescDTO;
+import com.zyh.adminservice.house.domain.dto.HouseListReqDTO;
 import com.zyh.adminservice.house.service.IHouseService;
+import com.zyh.commoncore.domain.dto.BasePageDTO;
 import com.zyh.commondomain.domain.R;
+import com.zyh.commondomain.domain.vo.BasePageVO;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @author zhangyuheng
@@ -17,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequestMapping("/house")
-public class HouseController {
+public class HouseController implements HouseFeignClient {
 
     @Resource(name = "houseServiceImpl")
     private IHouseService houseService;
@@ -29,5 +35,30 @@ public class HouseController {
     public R<Long> addOrEdit(@Validated @RequestBody HouseAddOrEditReqDTO houseAddOrEditReqDTO) {
         Long houseId = houseService.addOrEdit(houseAddOrEditReqDTO);
         return R.ok(houseId);
+    }
+
+    /**
+     * 查询房源详情（带缓存）
+     */
+    @GetMapping("/detail")
+    @Override
+    public R<HouseDetailVO> detail(Long houseId) {
+        HouseDTO houseDTO = houseService.detail(houseId);
+        if (null == houseDTO) {
+            log.warn("要查询的房源不存在，houseId:{}", houseId);
+            return R.fail("房源详情不存在！");
+        }
+        return R.ok(houseDTO.convertToVO());
+    }
+
+    /**
+     * 查询房源摘要列表（支持翻页、支持筛选）
+     */
+    @PostMapping("/list")
+    public R<BasePageVO<HouseVO>> list(@Validated @RequestBody HouseListReqDTO houseListReqDTO) {
+        BasePageDTO<HouseDescDTO> houseDescList = houseService.list(houseListReqDTO);
+        BasePageVO<HouseVO> result = new BasePageVO<>();
+        BeanUtils.copyProperties(houseDescList, result);
+        return R.ok(result);
     }
 }

@@ -2,6 +2,9 @@ package com.zyh.adminservice.house.service;
 
 import com.zyh.adminservice.house.domain.dto.HouseAddOrEditReqDTO;
 import com.zyh.adminservice.house.domain.dto.HouseDTO;
+import com.zyh.adminservice.house.domain.dto.HouseDescDTO;
+import com.zyh.adminservice.house.domain.dto.HouseListReqDTO;
+import com.zyh.commoncore.domain.dto.BasePageDTO;
 
 /**
  * @author zhangyuheng
@@ -29,4 +32,12 @@ public interface IHouseService {
      * @return
      */
     HouseDTO detail(Long houseId);
+
+    /**
+     * 查询房源摘要列表（支持筛选、翻页）
+     *
+     * @param houseListReqDTO
+     * @return
+     */
+    BasePageDTO<HouseDescDTO> list(HouseListReqDTO houseListReqDTO);
 }

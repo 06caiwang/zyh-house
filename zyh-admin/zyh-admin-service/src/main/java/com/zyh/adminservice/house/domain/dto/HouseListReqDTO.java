@@ -1,0 +1,43 @@
+package com.zyh.adminservice.house.domain.dto;
+
+import com.zyh.commondomain.domain.dto.BasePageReqDTO;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+/**
+ * @author zhangyuheng
+ */
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class HouseListReqDTO extends BasePageReqDTO {
+    /**
+     * 房源ID
+     */
+    private Long houseId;
+
+    /**
+     * 房源名称
+     */
+    private String title;
+
+    /**
+     * 房源类型
+     */
+    private String rentType;
+
+    /**
+     * 房源状态
+     */
+    private String status;
+
+    /**
+     * 所在城市
+     */
+    private Long cityId;
+
+    /**
+     * 所在小区
+     */
+    private String communityName;
+
+}

@@ -2,12 +2,14 @@ package com.zyh.adminservice.house.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.zyh.adminapi.config.domain.dto.DictionaryDataDTO;
-import com.zyh.adminapi.house.dto.DeviceDTO;
-import com.zyh.adminapi.house.dto.TagDTO;
+import com.zyh.adminapi.house.domain.dto.DeviceDTO;
+import com.zyh.adminapi.house.domain.dto.TagDTO;
 import com.zyh.adminservice.config.service.ISysDictionaryService;
 import com.zyh.adminservice.house.domain.HouseStatusEnum;
 import com.zyh.adminservice.house.domain.dto.HouseAddOrEditReqDTO;
 import com.zyh.adminservice.house.domain.dto.HouseDTO;
+import com.zyh.adminservice.house.domain.dto.HouseDescDTO;
+import com.zyh.adminservice.house.domain.dto.HouseListReqDTO;
 import com.zyh.adminservice.house.domain.entity.*;
 import com.zyh.adminservice.house.mapper.*;
 import com.zyh.adminservice.house.service.IHouseService;
@@ -15,6 +17,7 @@ import com.zyh.adminservice.mapper.domain.entity.SysRegion;
 import com.zyh.adminservice.mapper.mapper.RegionMapper;
 import com.zyh.adminservice.user.domain.entity.AppUser;
 import com.zyh.adminservice.user.mapper.AppUserMapper;
+import com.zyh.commoncore.domain.dto.BasePageDTO;
 import com.zyh.commoncore.utils.BeanCopyUtil;
 import com.zyh.commoncore.utils.JsonUtil;
 import com.zyh.commondomain.domain.ResultCode;
@@ -221,6 +224,40 @@ public class HouseServiceImpl implements IHouseService {
 
         // 6. 返回
         return houseDTO;
+    }
+
+    @Override
+    public BasePageDTO<HouseDescDTO> list(HouseListReqDTO houseListReqDTO) {
+        BasePageDTO<HouseDescDTO> result = new BasePageDTO<>();
+
+        // 查询总数：联表查询
+        // 涉及 house_status、house 两张表
+        Long totals = houseMapper.selectCountWithStatus(houseListReqDTO);
+        if (0 == totals) {
+            result.setTotals(0);
+            result.setTotalPages(0);
+            result.setList(Arrays.asList());
+            log.info("查询的房源列表为空！HouseListReqDTO:{}", JsonUtil.obj2String(houseListReqDTO));
+            return result;
+        }
+
+        // 查询列表
+        List<HouseDescDTO> houses = houseMapper.selectPageWithStatus(houseListReqDTO);
+        result.setTotals(
+                Integer.parseInt(
+                        String.valueOf(totals)));
+        result.setTotalPages(
+                BasePageDTO.calculateTotalPages(totals, houseListReqDTO.getPageSize()));
+        if (CollectionUtils.isEmpty(houses)) {
+            // 25
+            // 3 10 正常情况
+            // 4 10 异常情况
+            log.info("超出查询房源列表范围！HouseListReqDTO:{}", JsonUtil.obj2String(houseListReqDTO));
+            result.setList(Arrays.asList());
+            return result;
+        }
+        result.setList(houses);
+        return result;
     }
 
     /**

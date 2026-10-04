@@ -1,8 +1,8 @@
 package com.zyh.adminservice.house.domain.dto;
 
-import com.zyh.adminapi.house.dto.DeviceDTO;
-import com.zyh.adminapi.house.dto.TagDTO;
-import com.zyh.adminapi.house.vo.HouseDetailVO;
+import com.zyh.adminapi.house.domain.dto.DeviceDTO;
+import com.zyh.adminapi.house.domain.dto.TagDTO;
+import com.zyh.adminapi.house.domain.vo.HouseDetailVO;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
 
