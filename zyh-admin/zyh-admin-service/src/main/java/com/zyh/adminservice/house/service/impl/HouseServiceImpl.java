@@ -305,6 +305,37 @@ public class HouseServiceImpl implements IHouseService {
         cacheHouse(house.getId());
     }
 
+    @Override
+    public void refreshHouseIds() {
+        // 查询全量城市列表（2级城市）
+        List<SysRegion> sysRegions = regionMapper.selectList(new LambdaQueryWrapper<SysRegion>()
+                .eq(SysRegion::getLevel, "2"));
+
+        for (SysRegion sysRegion : sysRegions) {
+            // 删除当前城市下所有的房源列表映射（Redis）
+            Long cityId = sysRegion.getId();
+            redisService.removeForAllList(CITY_HOUSE_PREFIX + cityId);
+
+            // 查询当前城市下所有的房源列表（MySQL）
+            List<CityHouse> cityHouses = cityHouseMapper.selectList(new LambdaQueryWrapper<CityHouse>()
+                    .eq(CityHouse::getCityId, cityId));
+
+            // 新增当前城市下所有的房源列表映射（Redis）
+            if (!CollectionUtils.isEmpty(cityHouses)) {
+                redisService.setCacheList(
+                        CITY_HOUSE_PREFIX + cityId,
+                        cityHouses.stream()
+                                .map(CityHouse::getHouseId).distinct()
+                                .collect(Collectors.toList()));
+            }
+
+            // 更新房源列表详细信息（Redis）
+            for (CityHouse cityHouse : cityHouses) {
+                cacheHouse(cityHouse.getHouseId());
+            }
+        }
+    }
+
     /**
      * 缓存房源空对象(带过期时间)
      *

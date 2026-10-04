@@ -44,4 +44,9 @@ public interface IHouseService {
      * @param houseStatusEditReqDTO
      */
     void editStatus(HouseStatusEditReqDTO houseStatusEditReqDTO);
+
+    /**
+     * 脚本：刷新全量缓存
+     */
+    void refreshHouseIds();
 }
