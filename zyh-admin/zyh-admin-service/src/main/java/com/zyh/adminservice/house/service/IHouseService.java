@@ -4,6 +4,8 @@ import com.zyh.adminapi.house.domain.dto.SearchHouseListReqDTO;
 import com.zyh.adminservice.house.domain.dto.*;
 import com.zyh.commoncore.domain.dto.BasePageDTO;
 
+import java.util.List;
+
 /**
  * @author zhangyuheng
  */
@@ -45,6 +47,14 @@ public interface IHouseService {
      * @param houseStatusEditReqDTO
      */
     void editStatus(HouseStatusEditReqDTO houseStatusEditReqDTO);
+
+    /**
+     * 根据房东id查询其下房源id列表
+     *
+     * @param userId
+     * @return
+     */
+    List<Long> listByUserId(Long userId);
 
     /**
      * 脚本：刷新全量缓存

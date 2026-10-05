@@ -25,12 +25,15 @@ import com.zyh.commoncore.utils.TimestampUtil;
 import com.zyh.commondomain.domain.ResultCode;
 import com.zyh.commondomain.exception.ServiceException;
 import com.zyh.commonredis.service.RedisService;
+import com.zyh.commonredis.service.RedissonLockService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.redisson.api.RLock;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -49,6 +52,8 @@ public class HouseServiceImpl implements IHouseService {
     private static final String CITY_HOUSE_PREFIX = "house:list:";
     // 城市完整信息 key 前缀
     private static final String HOUSE_PREFIX = "house:";
+
+    private static final String LOCK_KEY = "scheduledTask:lock";
 
     @Autowired
     private HouseMapper houseMapper;
@@ -73,6 +78,9 @@ public class HouseServiceImpl implements IHouseService {
 
     @Autowired
     private RedisService redisService;
+
+    @Autowired
+    private RedissonLockService redissonLockService;
 
     @Resource(name = "sysDictionaryServiceImpl")
     private ISysDictionaryService sysDictionaryService;
@@ -307,6 +315,21 @@ public class HouseServiceImpl implements IHouseService {
 
         // 更新缓存
         cacheHouse(house.getId());
+    }
+
+    @Override
+    public List<Long> listByUserId(Long userId) {
+        if (null == userId) {
+            return Arrays.asList();
+        }
+
+        List<House> houses = houseMapper.selectList(
+                new LambdaQueryWrapper<House>()
+                        .eq(House::getUserId, userId));
+        return houses.stream().map(House::getId)
+                .distinct()
+                .collect(Collectors.toList());
+
     }
 
     @Override
@@ -812,5 +835,75 @@ public class HouseServiceImpl implements IHouseService {
             // throw e;
         }
 
+    }
+
+    /**
+     * 缓存房源完整数据 houseDTO(带过期时间)
+     *
+     * @param houseDTO
+     * @param timeout 秒
+     */
+    private void cacheHouse(HouseDTO houseDTO, Long timeout) {
+
+        if (null == houseDTO) {
+            log.warn("要缓存的房源详细信息为空！");
+            return;
+        }
+
+        // 缓存
+        try {
+            redisService.setCacheObject(HOUSE_PREFIX + houseDTO.getHouseId(),
+                    JsonUtil.obj2String(houseDTO), timeout, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("缓存房源完整信息时发生异常，houseDTO:{}", JsonUtil.obj2String(houseDTO), e);
+            // 对于房源完整信息，是否存在于redis，不需要强一致性。
+            // 因为C端查询时，如果redis不存在，可以通过查MySQL获取到数据，让后再放入Redis。
+            // throw e;
+        }
+
+    }
+
+    // @Scheduled(cron = "*/10 * * * * ?")
+    // 每天凌晨0点开始执行定时任务
+    @Scheduled(cron = "0 0 0 * * ?")
+    public void scheduledHouseStatus() {
+        log.info("开始执行定时任务：扭转房源状态");
+
+        // 加Redisson分布式锁
+        RLock rLock = redissonLockService.acquire(LOCK_KEY, -1);
+        if (null == rLock) {
+            log.info("定时任务被其他实例执行！");
+            return;
+        }
+
+        try {
+            // 查询全量已出租房源
+            List<HouseStatus> rentingHouses = houseStatusMapper.selectList(
+                    new LambdaQueryWrapper<HouseStatus>()
+                            .eq(HouseStatus::getStatus, HouseStatusEnum.RENTING.name()));
+
+            // 过滤需要扭转状态的房源列表（出租到期时间）
+            List<HouseStatus> needConvertList = rentingHouses.stream()
+                    .filter(houseStatus -> null != houseStatus.getRentEndTime()
+                            && 0 > TimestampUtil.calculateDifferenceMillis(
+                            TimestampUtil.getCurrentMillis(),houseStatus.getRentEndTime()))
+                    .collect(Collectors.toList());
+
+
+            // 扭转状态
+            for (HouseStatus houseStatus : needConvertList) {
+                HouseStatusEditReqDTO houseStatusEditReqDTO = new HouseStatusEditReqDTO();
+                houseStatusEditReqDTO.setHouseId(houseStatus.getHouseId());
+                houseStatusEditReqDTO.setStatus(HouseStatusEnum.UP.name());
+                editStatus(houseStatusEditReqDTO);
+            }
+
+
+        } finally {
+            // 解锁，只能自己解锁自己，不能其他线程解锁
+            if (rLock.isLocked() && rLock.isHeldByCurrentThread()) {
+                redissonLockService.releaseLock(rLock);
+            }
+        }
     }
 }
