@@ -39,6 +39,7 @@ public class AESUtil {
     }
 
     public static void main(String[] args) {
-        System.out.println(AESUtil.encryptHex("123456"));
+        System.out.println(AESUtil.encryptHex("15162146379"));
     }
 }
+

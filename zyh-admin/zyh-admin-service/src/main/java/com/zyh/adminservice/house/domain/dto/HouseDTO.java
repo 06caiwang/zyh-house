@@ -6,13 +6,14 @@ import com.zyh.adminapi.house.domain.vo.HouseDetailVO;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * @author zhangyuheng
  */
 @Data
-public class HouseDTO {
+public class HouseDTO implements Serializable {
     private Long houseId;
     // 房东信息
     private Long userId;

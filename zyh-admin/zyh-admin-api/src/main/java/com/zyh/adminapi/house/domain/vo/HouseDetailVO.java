@@ -2,13 +2,16 @@ package com.zyh.adminapi.house.domain.vo;
 
 import com.zyh.adminapi.house.domain.dto.DeviceDTO;
 import com.zyh.adminapi.house.domain.dto.TagDTO;
+import lombok.Data;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * @author zhangyuheng
  */
-public class HouseDetailVO {
+@Data
+public class HouseDetailVO implements Serializable {
     private Long houseId;
     private Long userId;
     private String nickName;

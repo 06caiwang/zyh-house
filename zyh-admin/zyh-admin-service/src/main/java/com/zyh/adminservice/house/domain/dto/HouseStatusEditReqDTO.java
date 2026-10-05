@@ -26,5 +26,6 @@ public class HouseStatusEditReqDTO implements Serializable {
     /**
      * 出租时长
      */
+    @NotBlank(message = "要修改的出租时长不能为空！")
     private String rentTimeCode;
 }
