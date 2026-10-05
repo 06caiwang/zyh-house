@@ -106,5 +106,17 @@
             <artifactId>zyh-common-message</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.bitejiuyeke</groupId>
+            <artifactId>zyh-admin-api</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.bitejiuyeke</groupId>
+            <artifactId>zyh-portal-api</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 </project>
