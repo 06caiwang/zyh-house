@@ -1,6 +1,7 @@
 package com.zyh.chatservice.controller;
 
 import com.zyh.chatservice.domain.dto.MessageListReqDTO;
+import com.zyh.chatservice.domain.dto.MessageReadReqDTO;
 import com.zyh.chatservice.domain.dto.MessageVisitedReqDTO;
 import com.zyh.chatservice.domain.vo.MessageVO;
 import com.zyh.chatservice.service.IMessageService;
@@ -44,6 +45,18 @@ public class MessageController {
     @PostMapping("/batch_visited")
     public R<?> batchVisited(@Validated @RequestBody MessageVisitedReqDTO messageVisitedReqDTO) {
         messageService.batchVisited(messageVisitedReqDTO);
+        return R.ok();
+    }
+
+    /**
+     * 更新消息已读状态（目前只有语音）
+     *
+     * @param messageReadReqDTO
+     * @return
+     */
+    @PostMapping("/batch_read")
+    public R<?> batchRead(@Validated @RequestBody MessageReadReqDTO messageReadReqDTO) {
+        messageService.batchRead(messageReadReqDTO);
         return R.ok();
     }
 }

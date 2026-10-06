@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author zhangyuheng
@@ -225,6 +226,46 @@ public class MessageServiceImpl implements IMessageService {
         SessionStatusDetailDTO sessionDTO = chatCacheService.getSessionDTOByCache(reqDTO.getSessionId());
         SessionStatusDetailDTO.UserInfo userInfo = sessionDTO.getFromUser(loginUserId);
         userInfo.setNotVisitedCount(0);
+        sessionDTO.setLastMessageDTO(messageDTOS.iterator().next());
+        chatCacheService.cacheSessionDTO(sessionDTO.getSessionId(), sessionDTO);
+    }
+
+    @Override
+    public void batchRead(MessageReadReqDTO reqDTO) {
+
+        // 修改MySql
+        List<Long> messageIds = reqDTO.getMessageIds().stream()
+                .map(Long::valueOf)
+                .collect(Collectors.toList());
+        messageMapper.update(null, new LambdaUpdateWrapper<Message>()
+                .in(Message::getId, messageIds)
+                .set(Message::getStatus, MessageStatusEnum.MESSAGE_READ.getCode()));
+
+        // 修改Redis
+        Set<MessageDTO> messageDTOS = chatCacheService.getMessageDTOSByCache(reqDTO.getSessionId());
+        if (CollectionUtils.isEmpty(messageDTOS)) {
+            return;
+        }
+
+        int count = reqDTO.getMessageIds().size();
+        for (MessageDTO messageDTO : messageDTOS) {
+            if (reqDTO.getMessageIds().contains(messageDTO.getMessageId())) {
+                messageDTO.setStatus(MessageStatusEnum.MESSAGE_READ.getCode());
+                chatCacheService.removeMessageDTOCache(messageDTO.getSessionId(), messageDTO.getMessageId());
+                chatCacheService.addMessageDOTToCache(messageDTO.getSessionId(), messageDTO);
+                count--;
+            }
+
+            if (count <= 0) {
+                break;
+            }
+
+        }
+
+        // 修改会话详情缓存:
+        // 1. 登录用户记录的对方消息未浏览数
+        // 2. 最后一条聊天消息（访问状态）
+        SessionStatusDetailDTO sessionDTO = chatCacheService.getSessionDTOByCache(reqDTO.getSessionId());
         sessionDTO.setLastMessageDTO(messageDTOS.iterator().next());
         chatCacheService.cacheSessionDTO(sessionDTO.getSessionId(), sessionDTO);
     }

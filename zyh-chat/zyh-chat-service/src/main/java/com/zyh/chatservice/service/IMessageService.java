@@ -1,9 +1,6 @@
 package com.zyh.chatservice.service;
 
-import com.zyh.chatservice.domain.dto.MessageDTO;
-import com.zyh.chatservice.domain.dto.MessageListReqDTO;
-import com.zyh.chatservice.domain.dto.MessageSendReqDTO;
-import com.zyh.chatservice.domain.dto.MessageVisitedReqDTO;
+import com.zyh.chatservice.domain.dto.*;
 import com.zyh.chatservice.domain.vo.MessageVO;
 
 import java.util.List;
@@ -42,4 +39,11 @@ public interface IMessageService {
      * @param reqDTO
      */
     void batchVisited(MessageVisitedReqDTO reqDTO);
+
+    /**
+     * 修改消息已读状态（目前只有语音消息）
+     *
+     * @param reqDTO
+     */
+    void batchRead(MessageReadReqDTO reqDTO);
 }
