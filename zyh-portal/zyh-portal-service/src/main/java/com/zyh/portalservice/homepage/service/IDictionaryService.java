@@ -1,0 +1,19 @@
+package com.zyh.portalservice.homepage.service;
+
+import com.zyh.portalservice.homepage.domain.dto.DictDataDTO;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * @author zhangyuheng
+ */
+public interface IDictionaryService {
+    /**
+     * 根据字典类型查询字典数据列表
+     *
+     * @param types
+     * @return key: type  value: dataList
+     */
+    Map<String, List<DictDataDTO>> batchFindDictionaryDataByTypes(List<String> types);
+}

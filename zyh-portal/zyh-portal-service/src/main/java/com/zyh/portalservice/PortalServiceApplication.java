@@ -7,7 +7,8 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 /**
  * @author zhangyuheng
  */
-@EnableFeignClients(basePackages = {"com.zyh.**.feign"})
+//@EnableFeignClients(basePackages = {"com.zyh.**.feign"})
+@EnableFeignClients(basePackages = "com.zyh.adminapi")
 @SpringBootApplication
 public class PortalServiceApplication {
     public static void main(String[] args) {
