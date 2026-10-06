@@ -2,8 +2,11 @@ package com.zyh.chatservice.service;
 
 import com.zyh.chatservice.domain.dto.SessionAddReqDTO;
 import com.zyh.chatservice.domain.dto.SessionGetReqDTO;
+import com.zyh.chatservice.domain.dto.SessionListReqDTO;
 import com.zyh.chatservice.domain.vo.SessionAddResVO;
 import com.zyh.chatservice.domain.vo.SessionGetResVO;
+
+import java.util.List;
 
 /**
  * @author zhangyuheng
@@ -24,4 +27,12 @@ public interface ISessionService {
      * @return
      */
     SessionGetResVO get(SessionGetReqDTO sessionGetReqDTO);
+
+    /**
+     * 获取会话列表
+     *
+     * @param sessionListReqDTO
+     * @return
+     */
+    List<SessionGetResVO> list(SessionListReqDTO sessionListReqDTO);
 }

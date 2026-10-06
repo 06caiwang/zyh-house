@@ -6,6 +6,7 @@ import com.zyh.adminapi.appuser.domain.vo.AppUserVO;
 import com.zyh.adminapi.appuser.feign.AppUserFeignClient;
 import com.zyh.chatservice.domain.dto.SessionAddReqDTO;
 import com.zyh.chatservice.domain.dto.SessionGetReqDTO;
+import com.zyh.chatservice.domain.dto.SessionListReqDTO;
 import com.zyh.chatservice.domain.dto.SessionStatusDetailDTO;
 import com.zyh.chatservice.domain.entity.Session;
 import com.zyh.chatservice.domain.vo.MessageVO;
@@ -27,6 +28,7 @@ import org.springframework.util.CollectionUtils;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -177,5 +179,36 @@ public class SessionServiceImpl implements ISessionService {
                 sessionDTO.getToUser(loginUserId).getUser().convertToVO());
 
         return resVO;
+    }
+
+    @Override
+    public List<SessionGetResVO> list(SessionListReqDTO sessionListReqDTO) {
+        // 1. 查询当前登录用户下的已经聊过的会话id列表（按照会话的最后时间排序）
+        // 目标：必须聊过天才能查到
+        // 用户下的会话id列表什么时候存？ 不是在创建会话时存，而是在第一次发消息聊天才会存。
+        Long loginUserId = tokenService.getLoginUser().getUserId();
+        Set<Long> sessionIds = chatCacheService.getUserSessionsByCache(loginUserId);
+        if (CollectionUtils.isEmpty(sessionIds)) {
+            return Arrays.asList();
+        }
+
+        // 2. 查询会话状态详情，并构造结果
+        return sessionIds.stream()
+                .map(sessionId -> chatCacheService.getSessionDTOByCache(sessionId))
+                .filter(sessionDTO -> sessionDTO != null && sessionDTO.getLastMessageDTO() != null)
+                .map(sessionDTO -> {
+                    SessionGetResVO sessionGetResVO = new SessionGetResVO();
+                    sessionGetResVO.setSessionId(sessionDTO.getSessionId());
+                    MessageVO lastMessageVO = new MessageVO();
+                    BeanUtils.copyProperties(sessionDTO.getLastMessageDTO(), lastMessageVO);
+                    sessionGetResVO.setLastMessageVO(lastMessageVO);
+                    sessionGetResVO.setLastSessionTime(sessionDTO.getLastSessionTime());
+                    sessionGetResVO.setNotVisitedCount(
+                            sessionDTO.getFromUser(loginUserId).getNotVisitedCount());
+                    sessionGetResVO.setOtherUser(
+                            sessionDTO.getToUser(loginUserId).getUser().convertToVO());
+                    return sessionGetResVO;
+                }).collect(Collectors.toList());
+
     }
 }

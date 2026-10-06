@@ -1,5 +1,6 @@
 package com.zyh.chatservice.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.zyh.chatservice.domain.dto.SessionStatusDetailDTO;
 import com.zyh.commoncore.utils.JsonUtil;
 import com.zyh.commonredis.service.RedisService;
@@ -7,6 +8,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * @author zhangyuheng
@@ -17,6 +23,9 @@ public class ChatCacheService {
 
     // 会话id - 会话详细信息DTO
     private static final String CHAT_SESSION_PREFIX = "chat:session:";
+
+    // 用户id - 会话ids
+    private static final String CHAT_ZSET_USER_PREFIX = "chat:zset:user:";
 
     @Autowired
     private RedisService redisService;
@@ -56,5 +65,26 @@ public class ChatCacheService {
         } catch (Exception e) {
             log.error("缓存会话详细信息时发生异常，sessionId:{}", sessionId, e);
         }
+    }
+
+    /**
+     * 获取用户下的会话列表
+     *
+     * @param userId
+     * @return
+     */
+    public Set<Long> getUserSessionsByCache(Long userId) {
+        Set<Long> sessionIds = new HashSet<>();
+        try {
+            String key = CHAT_ZSET_USER_PREFIX + userId;
+            sessionIds = redisService.getCacheZSetDesc(
+                    key, new TypeReference<LinkedHashSet<Long>>() {});
+            if (CollectionUtils.isEmpty(sessionIds)) {
+                return new HashSet<>();
+            }
+        } catch (Exception e) {
+            log.error("从缓存中获取用户下的会话列表异常，userId:{}", userId, e);
+        }
+        return sessionIds;
     }
 }
