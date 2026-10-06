@@ -2,6 +2,7 @@ package com.zyh.chatservice.service;
 
 import com.zyh.chatservice.domain.dto.SessionAddReqDTO;
 import com.zyh.chatservice.domain.dto.SessionGetReqDTO;
+import com.zyh.chatservice.domain.dto.SessionHouseReqDTO;
 import com.zyh.chatservice.domain.dto.SessionListReqDTO;
 import com.zyh.chatservice.domain.vo.SessionAddResVO;
 import com.zyh.chatservice.domain.vo.SessionGetResVO;
@@ -35,4 +36,12 @@ public interface ISessionService {
      * @return
      */
     List<SessionGetResVO> list(SessionListReqDTO sessionListReqDTO);
+
+    /**
+     * 判断会话中是否聊过某房源
+     *
+     * @param sessionHouseReqDTO
+     * @return
+     */
+    Boolean hasHouse(SessionHouseReqDTO sessionHouseReqDTO);
 }

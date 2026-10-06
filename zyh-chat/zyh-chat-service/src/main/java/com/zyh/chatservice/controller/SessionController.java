@@ -2,6 +2,7 @@ package com.zyh.chatservice.controller;
 
 import com.zyh.chatservice.domain.dto.SessionAddReqDTO;
 import com.zyh.chatservice.domain.dto.SessionGetReqDTO;
+import com.zyh.chatservice.domain.dto.SessionHouseReqDTO;
 import com.zyh.chatservice.domain.dto.SessionListReqDTO;
 import com.zyh.chatservice.domain.vo.SessionAddResVO;
 import com.zyh.chatservice.domain.vo.SessionGetResVO;
@@ -48,5 +49,16 @@ public class SessionController {
     @PostMapping("/list")
     public R<List<SessionGetResVO>> list(@Validated @RequestBody SessionListReqDTO sessionListReqDTO ) {
         return R.ok(sessionService.list(sessionListReqDTO));
+    }
+
+    /**
+     * 查看会话下是否聊过某房源
+     *
+     * @param sessionHouseReqDTO
+     * @return
+     */
+    @PostMapping("/has_house")
+    public R<Boolean> hasHouse(@Validated @RequestBody SessionHouseReqDTO sessionHouseReqDTO) {
+        return R.ok(sessionService.hasHouse(sessionHouseReqDTO));
     }
 }

@@ -4,10 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.zyh.adminapi.appuser.domain.dto.AppUserDTO;
 import com.zyh.adminapi.appuser.domain.vo.AppUserVO;
 import com.zyh.adminapi.appuser.feign.AppUserFeignClient;
-import com.zyh.chatservice.domain.dto.SessionAddReqDTO;
-import com.zyh.chatservice.domain.dto.SessionGetReqDTO;
-import com.zyh.chatservice.domain.dto.SessionListReqDTO;
-import com.zyh.chatservice.domain.dto.SessionStatusDetailDTO;
+import com.zyh.chatservice.domain.dto.*;
 import com.zyh.chatservice.domain.entity.Session;
 import com.zyh.chatservice.domain.vo.MessageVO;
 import com.zyh.chatservice.domain.vo.SessionAddResVO;
@@ -210,5 +207,22 @@ public class SessionServiceImpl implements ISessionService {
                     return sessionGetResVO;
                 }).collect(Collectors.toList());
 
+    }
+
+    @Override
+    public Boolean hasHouse(SessionHouseReqDTO sessionHouseReqDTO) {
+        // 查会话详细信息（Redis）
+        SessionStatusDetailDTO sessionDTO =
+                chatCacheService.getSessionDTOByCache(sessionHouseReqDTO.getSessionId());
+        if (null == sessionDTO) {
+            throw new ServiceException("会话id有误，不存在其会话信息！");
+        }
+
+        Set<Long> houseIds = sessionDTO.getHouseIds();
+        if (CollectionUtils.isEmpty(houseIds)) {
+            return false;
+        }
+
+        return houseIds.contains(sessionHouseReqDTO.getHouseId());
     }
 }
