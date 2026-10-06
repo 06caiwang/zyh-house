@@ -19,6 +19,7 @@
         <module>zyh-file</module>
         <module>zyh-admin</module>
         <module>zyh-portal</module>
+        <module>zyh-chat</module>
     </modules>
 
     <version>1.0-SNAPSHOT</version>
