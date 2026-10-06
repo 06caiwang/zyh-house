@@ -1,8 +1,11 @@
 package com.zyh.chatservice.domain.entity;
 
+import lombok.Data;
+
 /**
  * @author zhangyuheng
  */
+@Data
 public class Message {
     /**
      * 消息id

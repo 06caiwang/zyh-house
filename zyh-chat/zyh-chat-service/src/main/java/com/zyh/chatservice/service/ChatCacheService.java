@@ -112,4 +112,35 @@ public class ChatCacheService {
         }
         return messageDTOSet;
     }
+
+    /**
+     * 新增会话下的消息缓存
+     *
+     * @param sessionId
+     * @param messageDTO
+     */
+    public void addMessageDOTToCache(Long sessionId, MessageDTO messageDTO) {
+        try {
+            String key = CHAT_ZSET_SESSION_PREFIX + sessionId;
+            redisService.addMemberZSet(key, messageDTO, Long.parseLong(messageDTO.getMessageId()));
+        } catch (Exception e) {
+            log.error("新增会话下的消息缓存发生异常，sessionId:{}", sessionId, e);
+        }
+    }
+
+    /**
+     * 新增用户下的一个新会话
+     *
+     * @param userId
+     * @param sessionId
+     * @param lastSessionTime 排序规则：最后的会话时间
+     */
+    public void addUserSessionToCache(Long userId, Long sessionId, Long lastSessionTime) {
+        try {
+            String key = CHAT_ZSET_USER_PREFIX + userId;
+            redisService.addMemberZSet(key, sessionId, lastSessionTime);
+        } catch (Exception e) {
+            log.error("新增用户下的新会话id缓存时发生异常，userId:{}", userId, e);
+        }
+    }
 }
