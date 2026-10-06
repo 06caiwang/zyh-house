@@ -1,10 +1,8 @@
 package com.zyh.chatservice.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
-import com.zyh.chatservice.domain.dto.MessageDTO;
-import com.zyh.chatservice.domain.dto.MessageListReqDTO;
-import com.zyh.chatservice.domain.dto.MessageSendReqDTO;
-import com.zyh.chatservice.domain.dto.SessionStatusDetailDTO;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.zyh.chatservice.domain.dto.*;
 import com.zyh.chatservice.domain.entity.Message;
 import com.zyh.chatservice.domain.entity.Session;
 import com.zyh.chatservice.domain.enums.MessageStatusEnum;
@@ -15,6 +13,7 @@ import com.zyh.chatservice.mapper.SessionMapper;
 import com.zyh.chatservice.service.ChatCacheService;
 import com.zyh.chatservice.service.IMessageService;
 import com.zyh.chatservice.service.SnowflakeIdService;
+import com.zyh.commonsecurity.service.TokenService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -40,6 +39,9 @@ public class MessageServiceImpl implements IMessageService {
 
     @Autowired
     private SnowflakeIdService snowflakeIdService;
+
+    @Autowired
+    private TokenService tokenService;
 
     @Resource(name = "chatCacheService")
     private ChatCacheService chatCacheService;
@@ -174,5 +176,56 @@ public class MessageServiceImpl implements IMessageService {
         Collections.reverse(resultList);
 
         return resultList;
+    }
+
+    @Override
+    public void batchVisited(MessageVisitedReqDTO reqDTO) {
+
+        // 查询对方用户id
+        Long loginUserId = tokenService.getLoginUser().getUserId();
+        Session session = sessionMapper.selectById(reqDTO.getSessionId());
+        Long otherUserId = loginUserId.equals(session.getUserId1()) ? session.getUserId2() : session.getUserId1();
+
+        // 修改对方用户消息的访问状态（Mysql）
+        messageMapper.update(null,
+                new LambdaUpdateWrapper<Message>()
+                        .eq(Message::getSessionId, reqDTO.getSessionId())
+                        .eq(Message::getFromId, otherUserId)
+                        .eq(Message::getVisited, MessageStatusEnum.MESSAGE_NOT_VISITED.getCode())
+                        .set(Message::getVisited, MessageStatusEnum.MESSAGE_VISITED.getCode()));
+
+
+        // 修改对方用户消息的访问状态 （Redis）
+        // 会话-消息列表
+        Set<MessageDTO> messageDTOS = chatCacheService.getMessageDTOSByCache(reqDTO.getSessionId());
+        if (CollectionUtils.isEmpty(messageDTOS)) {
+            return;
+        }
+        for (MessageDTO messageDTO : messageDTOS) {
+            // 自己的消息不处理
+            if (messageDTO.getFromId().equals(loginUserId)) {
+                continue;
+            }
+
+            // 当遍历到的消息为已浏览，说明以前的消息都时已浏览
+            if (MessageStatusEnum.MESSAGE_VISITED.getCode().equals(messageDTO.getVisited())) {
+                break;
+            }
+
+            // 需要更新浏览状态,先删除再新增
+            messageDTO.setVisited(MessageStatusEnum.MESSAGE_VISITED.getCode());
+            chatCacheService.removeMessageDTOCache(messageDTO.getSessionId(), messageDTO.getMessageId());
+            chatCacheService.addMessageDOTToCache(messageDTO.getSessionId(), messageDTO);
+        }
+
+
+        // 修改会话详情缓存:
+        // 1. 登录用户记录的对方消息未浏览数
+        // 2. 最后一条聊天消息（访问状态）
+        SessionStatusDetailDTO sessionDTO = chatCacheService.getSessionDTOByCache(reqDTO.getSessionId());
+        SessionStatusDetailDTO.UserInfo userInfo = sessionDTO.getFromUser(loginUserId);
+        userInfo.setNotVisitedCount(0);
+        sessionDTO.setLastMessageDTO(messageDTOS.iterator().next());
+        chatCacheService.cacheSessionDTO(sessionDTO.getSessionId(), sessionDTO);
     }
 }

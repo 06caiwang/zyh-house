@@ -143,4 +143,15 @@ public class ChatCacheService {
             log.error("新增用户下的新会话id缓存时发生异常，userId:{}", userId, e);
         }
     }
+
+    public void removeMessageDTOCache(Long sessionId, String messageId) {
+
+        try {
+            String key = CHAT_ZSET_SESSION_PREFIX + sessionId;
+            redisService.removeZSetByScore(key,
+                    Long.parseLong(messageId), Long.parseLong(messageId));
+        } catch (Exception e) {
+            log.error("删除会话下的指定消息缓存发生异常，sessionId:{}, messageId:{}", sessionId, messageId, e);
+        }
+    }
 }

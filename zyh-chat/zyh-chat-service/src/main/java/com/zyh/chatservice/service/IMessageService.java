@@ -3,6 +3,7 @@ package com.zyh.chatservice.service;
 import com.zyh.chatservice.domain.dto.MessageDTO;
 import com.zyh.chatservice.domain.dto.MessageListReqDTO;
 import com.zyh.chatservice.domain.dto.MessageSendReqDTO;
+import com.zyh.chatservice.domain.dto.MessageVisitedReqDTO;
 import com.zyh.chatservice.domain.vo.MessageVO;
 
 import java.util.List;
@@ -34,4 +35,11 @@ public interface IMessageService {
      * @return
      */
     List<MessageVO> list(MessageListReqDTO messageListReqDTO);
+
+    /**
+     * 修改消息访问状态
+     *
+     * @param reqDTO
+     */
+    void batchVisited(MessageVisitedReqDTO reqDTO);
 }

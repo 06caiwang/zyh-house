@@ -1,6 +1,7 @@
 package com.zyh.chatservice.controller;
 
 import com.zyh.chatservice.domain.dto.MessageListReqDTO;
+import com.zyh.chatservice.domain.dto.MessageVisitedReqDTO;
 import com.zyh.chatservice.domain.vo.MessageVO;
 import com.zyh.chatservice.service.IMessageService;
 import com.zyh.commondomain.domain.R;
@@ -32,5 +33,17 @@ public class MessageController {
     @PostMapping("/list")
     public R<List<MessageVO>> list(@Validated @RequestBody MessageListReqDTO messageListReqDTO) {
         return R.ok(messageService.list(messageListReqDTO));
+    }
+
+    /**
+     * 更新消息访问状态
+     *
+     * @param messageVisitedReqDTO
+     * @return
+     */
+    @PostMapping("/batch_visited")
+    public R<?> batchVisited(@Validated @RequestBody MessageVisitedReqDTO messageVisitedReqDTO) {
+        messageService.batchVisited(messageVisitedReqDTO);
+        return R.ok();
     }
 }
