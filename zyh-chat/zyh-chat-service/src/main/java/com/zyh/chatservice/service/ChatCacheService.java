@@ -1,9 +1,11 @@
 package com.zyh.chatservice.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.zyh.chatservice.domain.dto.MessageDTO;
 import com.zyh.chatservice.domain.dto.SessionStatusDetailDTO;
 import com.zyh.commoncore.utils.JsonUtil;
 import com.zyh.commonredis.service.RedisService;
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,9 @@ public class ChatCacheService {
 
     // 用户id - 会话ids
     private static final String CHAT_ZSET_USER_PREFIX = "chat:zset:user:";
+
+    // 会话id - 聊天消息列表（zset）
+    private static final String CHAT_ZSET_SESSION_PREFIX = "chat:zset:session:";
 
     @Autowired
     private RedisService redisService;
@@ -86,5 +91,25 @@ public class ChatCacheService {
             log.error("从缓存中获取用户下的会话列表异常，userId:{}", userId, e);
         }
         return sessionIds;
+    }
+
+    /**
+     * 获取会话下的聊天记录集合
+     *
+     * @param sessionId
+     * @return
+     */
+    public Set<MessageDTO> getMessageDTOSByCache(Long sessionId) {
+        Set<MessageDTO> messageDTOSet = new HashSet<>();
+        try {
+            String key = CHAT_ZSET_SESSION_PREFIX + sessionId;
+            messageDTOSet = redisService.getCacheZSetDesc(key, new TypeReference<LinkedHashSet<MessageDTO>>(){});
+            if (CollectionUtils.isEmpty(messageDTOSet)) {
+                return new HashSet<>();
+            }
+        } catch (Exception e) {
+            log.error("获取会话下的消息列表缓存发生异常，sessionId:{}", sessionId, e);
+        }
+        return messageDTOSet;
     }
 }
