@@ -1,8 +1,11 @@
 package com.zyh.portalservice.homepage.controller;
 
 import com.zyh.commondomain.domain.R;
+import com.zyh.commondomain.domain.vo.BasePageVO;
+import com.zyh.portalservice.homepage.domain.dto.HouseListReqDTO;
 import com.zyh.portalservice.homepage.domain.dto.PullDataListReqDTO;
 import com.zyh.portalservice.homepage.domain.vo.CityDescVO;
+import com.zyh.portalservice.homepage.domain.vo.HouseDescVO;
 import com.zyh.portalservice.homepage.domain.vo.PullDataListVO;
 import com.zyh.portalservice.homepage.service.IHomePageService;
 import jakarta.annotation.Resource;
@@ -33,5 +36,13 @@ public class HomePageController  {
     @PostMapping("/pull_list/get/nologin")
     public R<PullDataListVO> getPullData(@Validated @RequestBody PullDataListReqDTO pullDataListReqDTO) {
         return R.ok(homePageService.getPullData(pullDataListReqDTO));
+    }
+
+    /**
+     * 查询房源列表
+     */
+    @PostMapping("/house_list/search/nologin")
+    public R<BasePageVO<HouseDescVO>> houseList(@Validated @RequestBody HouseListReqDTO reqDTO) {
+        return R.ok(homePageService.houseList(reqDTO));
     }
 }

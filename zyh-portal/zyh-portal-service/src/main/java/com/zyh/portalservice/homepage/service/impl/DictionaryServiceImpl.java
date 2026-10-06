@@ -1,5 +1,6 @@
 package com.zyh.portalservice.homepage.service.impl;
 
+import com.zyh.adminapi.config.domain.dto.DictionaryDataDTO;
 import com.zyh.adminapi.config.feign.DictionaryFeignClient;
 import com.zyh.commoncore.utils.BeanCopyUtil;
 import com.zyh.commoncore.utils.JsonUtil;
@@ -8,6 +9,7 @@ import com.zyh.portalservice.homepage.domain.dto.DictDataDTO;
 import com.zyh.portalservice.homepage.service.IDictionaryService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -24,6 +26,8 @@ public class DictionaryServiceImpl implements IDictionaryService {
 
     private static final String DICT_TYPE_PREFIX = "applet:dict:type:";
     private static final Long DICT_TYPE_TIMEOUT = 5L;
+    private static final String DICT_DATA_PREFIX = "applet:dict:data:";
+    private static final Long DICT_DATA_TIMEOUT = 5L;
 
     @Autowired
     private DictionaryFeignClient dictionaryFeignClient;
@@ -71,6 +75,65 @@ public class DictionaryServiceImpl implements IDictionaryService {
         return resultMap;
     }
 
+    @Override
+    public Map<String, DictDataDTO> batchFindDictionaryData(List<String> dataKeys) {
+
+        Map<String, DictDataDTO> resultMap = new HashMap<>();
+
+        // 查缓存: dataKey:DictDataDTO
+        List<String> noCacheDataKeys = new ArrayList<>();
+        for (String dataKey : dataKeys) {
+            DictDataDTO dictDataDTO = getDataCache(dataKey);
+            if (null == dictDataDTO) {
+                noCacheDataKeys.add(dataKey);
+            } else {
+                resultMap.put(dataKey, dictDataDTO);
+            }
+        }
+
+        // 全部存在：返回
+        if (CollectionUtils.isEmpty(noCacheDataKeys)) {
+            return resultMap;
+        }
+
+        // 不存在：feign
+        List<DictionaryDataDTO> dataDTOList = dictionaryFeignClient.getDicDataByKeys(noCacheDataKeys);
+        if (CollectionUtils.isEmpty(dataDTOList)) {
+            log.error("feign 字典数据不存在！noCacheDataKeys：{}", JsonUtil.obj2String(noCacheDataKeys));
+            return resultMap;
+        }
+
+        // 缓存结果
+        for (DictionaryDataDTO dictionaryDataDTO :  dataDTOList) {
+            DictDataDTO dictDataDTO = new DictDataDTO();
+            BeanUtils.copyProperties(dictionaryDataDTO, dictDataDTO);
+            cacheData(dictionaryDataDTO.getDataKey(), dictDataDTO);
+            resultMap.put(dictionaryDataDTO.getDataKey(), dictDataDTO);
+        }
+        return resultMap;
+    }
+
+    private void cacheData(String dataKey, DictDataDTO dictDataDTO) {
+        if (StringUtils.isEmpty(dataKey)) {
+            return;
+        }
+
+        redisService.setCacheObject(DICT_DATA_PREFIX + dataKey,
+                JsonUtil.obj2String(dictDataDTO),
+                DICT_DATA_TIMEOUT, TimeUnit.MINUTES);
+    }
+
+    private DictDataDTO getDataCache(String dataKey) {
+        if (StringUtils.isEmpty(dataKey)) {
+            return null;
+        }
+        String str = redisService.getCacheObject(DICT_DATA_PREFIX + dataKey, String.class);
+        if (StringUtils.isBlank(str)) {
+            return null;
+        }
+        return JsonUtil.string2Obj(str, DictDataDTO.class);
+    }
+
     private void cacheList(String type, List<DictDataDTO> copyListProperties) {
         if (StringUtils.isBlank(type)) {
             return;
@@ -93,5 +156,4 @@ public class DictionaryServiceImpl implements IDictionaryService {
         }
         return JsonUtil.string2List(str, DictDataDTO.class);
     }
-
 }

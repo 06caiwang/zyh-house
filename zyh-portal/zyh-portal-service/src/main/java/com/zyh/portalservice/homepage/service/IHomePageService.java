@@ -1,7 +1,10 @@
 package com.zyh.portalservice.homepage.service;
 
+import com.zyh.commondomain.domain.vo.BasePageVO;
+import com.zyh.portalservice.homepage.domain.dto.HouseListReqDTO;
 import com.zyh.portalservice.homepage.domain.dto.PullDataListReqDTO;
 import com.zyh.portalservice.homepage.domain.vo.CityDescVO;
+import com.zyh.portalservice.homepage.domain.vo.HouseDescVO;
 import com.zyh.portalservice.homepage.domain.vo.PullDataListVO;
 
 /**
@@ -24,4 +27,12 @@ public interface IHomePageService {
      * @return
      */
     PullDataListVO getPullData(PullDataListReqDTO pullDataListReqDTO);
+
+    /**
+     * 获取房源列表
+     *
+     * @param reqDTO
+     * @return
+     */
+    BasePageVO<HouseDescVO> houseList(HouseListReqDTO reqDTO);
 }
