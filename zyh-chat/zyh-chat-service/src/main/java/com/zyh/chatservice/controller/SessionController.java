@@ -1,7 +1,9 @@
 package com.zyh.chatservice.controller;
 
 import com.zyh.chatservice.domain.dto.SessionAddReqDTO;
+import com.zyh.chatservice.domain.dto.SessionGetReqDTO;
 import com.zyh.chatservice.domain.vo.SessionAddResVO;
+import com.zyh.chatservice.domain.vo.SessionGetResVO;
 import com.zyh.chatservice.service.ISessionService;
 import com.zyh.commondomain.domain.R;
 import jakarta.annotation.Resource;
@@ -27,5 +29,13 @@ public class SessionController {
     @PostMapping("/add")
     public R<SessionAddResVO> add(@Validated @RequestBody SessionAddReqDTO sessionAddReqDTO) {
         return R.ok(sessionService.add(sessionAddReqDTO));
+    }
+
+    /**
+     * 查询咨询会话
+     */
+    @PostMapping("/get")
+    public R<SessionGetResVO> get(@Validated @RequestBody SessionGetReqDTO sessionGetReqDTO ) {
+        return R.ok(sessionService.get(sessionGetReqDTO));
     }
 }

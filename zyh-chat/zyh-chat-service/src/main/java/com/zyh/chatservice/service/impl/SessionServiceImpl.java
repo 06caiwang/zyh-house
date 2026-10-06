@@ -5,9 +5,12 @@ import com.zyh.adminapi.appuser.domain.dto.AppUserDTO;
 import com.zyh.adminapi.appuser.domain.vo.AppUserVO;
 import com.zyh.adminapi.appuser.feign.AppUserFeignClient;
 import com.zyh.chatservice.domain.dto.SessionAddReqDTO;
+import com.zyh.chatservice.domain.dto.SessionGetReqDTO;
 import com.zyh.chatservice.domain.dto.SessionStatusDetailDTO;
 import com.zyh.chatservice.domain.entity.Session;
+import com.zyh.chatservice.domain.vo.MessageVO;
 import com.zyh.chatservice.domain.vo.SessionAddResVO;
+import com.zyh.chatservice.domain.vo.SessionGetResVO;
 import com.zyh.chatservice.mapper.SessionMapper;
 import com.zyh.chatservice.service.ChatCacheService;
 import com.zyh.chatservice.service.ISessionService;
@@ -119,6 +122,57 @@ public class SessionServiceImpl implements ISessionService {
         resVO.setSessionId(session.getId());
         resVO.setLoginUser(
                 sessionDTO.getFromUser(loginUserId).getUser().convertToVO());
+        resVO.setOtherUser(
+                sessionDTO.getToUser(loginUserId).getUser().convertToVO());
+
+        return resVO;
+    }
+
+    @Override
+    public SessionGetResVO get(SessionGetReqDTO sessionGetReqDTO) {
+        SessionGetResVO resVO = new SessionGetResVO();
+
+        // 排序俩用户id
+        Long userId1 = sessionGetReqDTO.getUserId1();
+        Long userId2 = sessionGetReqDTO.getUserId2();
+        // 确保 uid1 总是较小的 ID,这样可以避免重复的会话
+        boolean isSwapped = userId1 > userId2;
+        if (isSwapped) {
+            Long temp = userId1;
+            userId1 = userId2;
+            userId2 = temp;
+        }
+
+        // 校验会话是否存在
+        Session session = sessionMapper.selectOne(
+                new LambdaQueryWrapper<Session>()
+                        .eq(Session::getUserId1, userId1)
+                        .eq(Session::getUserId2, userId2));
+
+        // 不存在，返回空
+        if (null == session) {
+            return resVO;
+        }
+
+        // 存在，查缓存，构造返回
+        SessionStatusDetailDTO sessionDTO = chatCacheService.getSessionDTOByCache(session.getId());
+        if (null == sessionDTO) {
+            throw new ServiceException("聊天会话id不一致");
+        }
+
+        resVO.setSessionId(session.getId());
+        if (null != sessionDTO.getLastMessageDTO()) {
+            MessageVO messageVO = new MessageVO();
+            BeanUtils.copyProperties(sessionDTO.getLastMessageDTO(), messageVO);
+            resVO.setLastMessageVO(messageVO);
+        }
+        if (null != sessionDTO.getLastSessionTime()) {
+            resVO.setLastSessionTime(sessionDTO.getLastSessionTime());
+        }
+        // 未浏览数：当前登录用户未浏览对方用户的消息数，存在自己的用户信息中
+        Long loginUserId = tokenService.getLoginUser().getUserId();
+        resVO.setNotVisitedCount(
+                sessionDTO.getFromUser(loginUserId).getNotVisitedCount());
         resVO.setOtherUser(
                 sessionDTO.getToUser(loginUserId).getUser().convertToVO());
 
