@@ -324,12 +324,4 @@ mvn -pl zyh-portal/zyh-portal-service -am "-Dtest=HomePageServiceImplTest,Servle
 
 性能结论应由固定部署、数据规模、缓存状态、并发、成功率和分位延迟支持；当前不宣称生产级权限完备、消息零丢失或万级在线容量。
 
-## 参考资料
-
-文档编排参考同类 GitHub 项目的功能、模块、架构与环境说明方式，内容依据本仓库实现整理：
-
-- [macrozheng/mall](https://github.com/macrozheng/mall)
-- [macrozheng/mall-swarm](https://github.com/macrozheng/mall-swarm)
-- [Spring Cloud Alibaba：Nacos Config](https://github.com/alibaba/spring-cloud-alibaba/wiki/Nacos-config)
-
 欢迎通过 [Issues](https://github.com/06caiwang/zyh-house/issues) 提交可复现的问题。请提供模块、环境、复现步骤及脱敏日志，避免上传令牌、密码、云密钥或个人聊天内容。
