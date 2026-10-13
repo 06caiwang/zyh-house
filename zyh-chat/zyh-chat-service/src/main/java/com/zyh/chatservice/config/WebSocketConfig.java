@@ -36,8 +36,13 @@ public class WebSocketConfig extends ServerEndpointConfig.Configurator {
     public void modifyHandshake(ServerEndpointConfig sec, HandshakeRequest request, HandshakeResponse response) {
         // 设置用户信息
         Map<String, List<String>> headers = request.getHeaders();
-        List<String> authorization = headers.get("Authorization");
-        if (CollectionUtils.isEmpty(authorization)) {
+        List<String> authorization = headers.entrySet().stream()
+                .filter(entry -> "Authorization".equalsIgnoreCase(entry.getKey()))
+                .map(Map.Entry::getValue)
+                .findFirst().orElse(null);
+        sec.getUserProperties().remove("Authorization");
+        if (CollectionUtils.isEmpty(authorization) || authorization.get(0) == null
+                || authorization.get(0).isBlank()) {
             // 建立连接时，请求头中的用户信息为空，无法通过校验。
             // 管理连接要求 Authorization 必传
             throw new RuntimeException("请求头不符合要求，缺少 Authorization 信息");

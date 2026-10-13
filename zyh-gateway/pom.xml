@@ -18,6 +18,11 @@
     </properties>
     <dependencies>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway</artifactId>
         </dependency>
@@ -53,6 +58,13 @@
             <groupId>com.bitejiuyeke</groupId>
             <artifactId>zyh-common-security</artifactId>
             <version>1.0-SNAPSHOT</version>
+            <!-- Reactive Gateway 的 WebSocket 升级必须使用 Netty；其他业务服务继续使用 Servlet。 -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-web</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

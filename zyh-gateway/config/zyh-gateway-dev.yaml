@@ -1,0 +1,59 @@
+server:
+  port: 18080
+zyh:
+  redis:
+    enabled: true
+
+security:
+  ignore:
+    whites:
+      - /admin/logout
+      - /admin/register
+      - admin/codeLogin
+      - /**/login/**
+      - /**/test/**
+      - /**/send_code/**
+      - /**/nologin/**
+      
+spring:
+  cloud:
+    gateway:
+      routes:
+        # 管理模块
+        - id: zyh-mstemplate
+          uri: lb://zyh-mstemplate
+          predicates:
+            - Path=/mstemplate/**
+          filters:
+            - StripPrefix=1
+        - id: zyh-file
+          uri: lb://zyh-file
+          predicates: 
+            - Path=/file/**
+          filters:
+            - StripPrefix=1
+        - id: zyh-admin
+          uri: lb://zyh-admin
+          predicates: 
+            - Path=/admin/**
+          filters:
+            - StripPrefix=1
+        - id: zyh-portal
+          uri: lb://zyh-portal
+          predicates: 
+            - Path=/portal/**
+          filters:
+            - StripPrefix=1
+        - id: zyh-chat-websocket
+          order: -1
+          uri: lb:ws://zyh-chat
+          predicates:
+            - Path=/chat/websocket
+          filters:
+            - StripPrefix=1
+        - id: zyh-chat
+          uri: lb://zyh-chat
+          predicates:
+            - Path=/chat/**
+          filters:
+            - StripPrefix=1

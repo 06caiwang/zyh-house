@@ -157,9 +157,13 @@ public class HomePageServiceImpl implements IHomePageService {
                     houseDescVO.setPrice(houseDetailVO.getPrice());
 
                     DictDataDTO rentTypeData = dictDataDTOMap.get(houseDetailVO.getRentType());
-                    houseDescVO.setRentType(rentTypeData.getValue());
+                    houseDescVO.setRentType(rentTypeData != null ? rentTypeData.getValue() : "租赁方式待确认");
                     DictDataDTO positionData = dictDataDTOMap.get(houseDetailVO.getPosition());
-                    houseDescVO.setPosition(positionData.getValue());
+                    houseDescVO.setPosition(positionData != null ? positionData.getValue() : "朝向待确认");
+                    if (rentTypeData == null || positionData == null) {
+                        log.warn("房源字典缺项，houseId:{}, rentType:{}, position:{}",
+                                houseDetailVO.getHouseId(), houseDetailVO.getRentType(), houseDetailVO.getPosition());
+                    }
                     return houseDescVO;
                 }).collect(Collectors.toList());
     }

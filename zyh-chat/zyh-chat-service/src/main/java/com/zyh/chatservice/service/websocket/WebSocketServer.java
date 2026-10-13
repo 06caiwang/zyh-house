@@ -111,7 +111,7 @@ public class WebSocketServer {
             log.info("用户{}已经连接", userId);
         } catch (Exception e) {
             log.error("连接出现异常, 关闭连接！", e);
-            session.close();
+            session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "Authentication required"));
         }
 
     }
@@ -119,8 +119,9 @@ public class WebSocketServer {
     @OnClose
     public void onClose() throws IOException {
         // log.info("断开连接成功！");
-        if (userId != null && webSocketMap.containsKey(userId)) {
-            webSocketMap.remove(userId);
+        if (userId != null) {
+            // 同一用户重连后，旧连接的关闭回调不能移除新连接。
+            webSocketMap.remove(userId, this);
         }
         log.info("用户{}已经关闭连接", userId);
         this.session = null;
